@@ -170,6 +170,7 @@
     gap: 1.5rem; padding-block: .6rem;
   }
   nav.main { display: flex; align-items: center; gap: 1.8rem; }
+  .nav-links { display: flex; align-items: center; gap: 1.8rem; }
   nav.main a.link {
     font-family: var(--font-display);
     text-transform: uppercase;
@@ -181,7 +182,43 @@
     transition: color .18s;
   }
   nav.main a.link:hover { color: #fff; }
-  @media (max-width: 900px) { nav.main .link { display: none; } }
+
+  .nav-toggle {
+    display: none;
+    flex: none;
+    width: 2.35rem; height: 2.35rem;
+    align-items: center; justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(233, 234, 232, .28);
+    background: transparent;
+    color: var(--off-white);
+    cursor: pointer;
+  }
+  .nav-toggle svg { width: 1.2rem; height: 1.2rem; }
+  .nav-toggle:hover { border-color: var(--gold-bright); color: var(--gold-bright); }
+
+  @media (max-width: 900px) {
+    nav.main { gap: .7rem; }
+    .nav-toggle { display: inline-flex; }
+    .nav-links {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      background: var(--navy);
+      border-bottom: 1px solid rgba(233, 234, 232, .14);
+      max-height: 0;
+      overflow: hidden;
+      visibility: hidden;
+      transition: max-height .28s ease;
+    }
+    .nav-links.open { max-height: 22rem; visibility: visible; }
+    .nav-links .link {
+      padding: 1rem clamp(1.15rem, 5vw, 3rem);
+      border-top: 1px solid rgba(233, 234, 232, .1);
+    }
+  }
 
   /* ---------- Hero ---------- */
   .hero {
@@ -576,15 +613,20 @@
       <svg role="img" aria-label="Golf Business Club Orléans"><use href="#gbc-wordmark"></use></svg>
     </a>
     <nav class="main">
-      <a class="link" href="#club">Le club</a>
-      <a class="link" href="#objectifs">Objectifs</a>
-      <a class="link" href="#evenements">Événements</a>
-      <a class="link" href="#adhesion">Adhésion</a>
-      <a class="link" href="#contact">Contact</a>
+      <div class="nav-links" id="navLinks">
+        <a class="link" href="#club">Le club</a>
+        <a class="link" href="#objectifs">Objectifs</a>
+        <a class="link" href="#evenements">Événements</a>
+        <a class="link" href="#adhesion">Adhésion</a>
+        <a class="link" href="#contact">Contact</a>
+      </div>
       <button class="theme-toggle" id="themeBtn" type="button" aria-label="Changer de thème" title="Changer de thème">
         <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
       </button>
       <a class="btn sm" href="https://www.helloasso.com/associations/golf-business-club-orleans/adhesions/paiement-cotisation-2025-2026" target="_blank" rel="noopener">Adhérer</a>
+      <button class="nav-toggle" id="navToggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navLinks">
+        <svg id="navToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+      </button>
     </nav>
   </div>
 </header>
@@ -870,6 +912,27 @@
 
     document.getElementById("yr").textContent = new Date().getFullYear();
 
+    // ---- Mobile menu ----
+    var navToggle = document.getElementById("navToggle");
+    var navLinks = document.getElementById("navLinks");
+    var navToggleIcon = document.getElementById("navToggleIcon");
+    var MENU_ICON = '<path d="M3 6h18M3 12h18M3 18h18"></path>';
+    var CLOSE_ICON = '<path d="M6 6l12 12M18 6 6 18"></path>';
+    function setNavOpen(open) {
+      navLinks.classList.toggle("open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      navToggleIcon.innerHTML = open ? CLOSE_ICON : MENU_ICON;
+    }
+    navToggle.addEventListener("click", function () {
+      setNavOpen(!navLinks.classList.contains("open"));
+    });
+    navLinks.addEventListener("click", function (e) {
+      if (e.target.closest("a")) setNavOpen(false);
+    });
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 900) setNavOpen(false);
+    });
+
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var reveals = document.querySelectorAll(".reveal");
     if (reduce || !("IntersectionObserver" in window)) {
@@ -881,6 +944,11 @@
         });
       }, { threshold: 0.14, rootMargin: "0px 0px -8% 0px" });
       reveals.forEach(function (el) { io.observe(el); });
+      // Safety net: if a section never intersects (fast programmatic scroll,
+      // odd viewport, or a stalled observer), don't leave content invisible.
+      setTimeout(function () {
+        reveals.forEach(function (el) { el.classList.add("in"); });
+      }, 2500);
     }
 
     document.getElementById("contactForm").addEventListener("submit", function (e) {
